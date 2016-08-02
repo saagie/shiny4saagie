@@ -33,3 +33,6 @@ COPY shiny-server.sh /usr/bin/shiny-server.sh
 
 RUN chmod 755 /usr/bin/shiny-server.sh
 
+# Hacky way to display the app located at /srv/shiny-server/myapp in iframe
+COPY index.html /srv/shiny-server/index.html
+
