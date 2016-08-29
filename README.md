@@ -1,7 +1,7 @@
 Template to build on top of this image:
 
 ```
-FROM shiny4saagie
+FROM saagie/shiny4saagie
 
 # Install R packages required by your Shiny app
 RUN R -e 'install.packages(c("DT", "magrittr"), repos="http://cran.rstudio.com")'
