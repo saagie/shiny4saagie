@@ -13,8 +13,10 @@ COPY myapp /srv/shiny-server/myapp
 CMD ["/usr/bin/shiny-server.sh"]
 ```
 
+Copy your Shiny app to the `myapp` before launching this Docker image.
+
 To use the image you built, push it to your public Dockerhub repo, then pull it from Saagie
 Or build it in a private repo, directly from Jenkins on the platform
 
-Runs on port 3838
+Runs on port 80
 

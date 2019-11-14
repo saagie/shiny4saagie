@@ -1,7 +1,6 @@
 FROM cardcorp/r-java
 
-MAINTAINER aurele@saagie.com
-
+# INSTALLATION DES PRERREQUIS
 RUN apt-get update && apt-get install -y -t unstable \
     sudo \
     gdebi-core \
@@ -11,28 +10,35 @@ RUN apt-get update && apt-get install -y -t unstable \
     libcairo2-dev/unstable \
     libxt-dev \
     curl \
+    nginx \
     openssl
-    
-RUN mkdir /usr/lib/impala && mkdir /usr/lib/impala/lib && cd /usr/lib/impala/lib && \
-    curl -O https://downloads.cloudera.com/impala-jdbc/impala-jdbc-0.5-2.zip && \
-    unzip -j impala-jdbc-0.5-2.zip && rm impala-jdbc-0.5-2.zip
 
-RUN R -e 'install.packages(c("RJDBC", "RImpala"), repos = "http://cran.rstudio.com")'
+# INSTALLATION DE IMPALA JDBC => REQUIRE TO DOWNLOAD IMPALA JDBC FIRST
+# RUN mkdir /usr/lib/impala && mkdir /usr/lib/impala/lib
+# COPY ./impala_jdbc_2.6.4.1005.zip /usr/lib/impala/lib
+# RUN cd /usr/lib/impala/lib && unzip -j impala_jdbc_2.6.4.1005.zip && rm impala_jdbc_2.6.4.1005.zip
+# RUN R -e 'install.packages(c("RJDBC", "RImpala"), repos = "http://cran.rstudio.com")'
 
-RUN wget --no-verbose https://s3.amazonaws.com/rstudio-shiny-server-os-build/ubuntu-12.04/x86_64/VERSION -O "version.txt" && \
-    VERSION=$(cat version.txt)  && \
-    wget --no-verbose "https://s3.amazonaws.com/rstudio-shiny-server-os-build/ubuntu-12.04/x86_64/shiny-server-$VERSION-amd64.deb" -O ss-latest.deb && \
+# INSTALLATION DE SHINY
+RUN wget --no-verbose "https://download3.rstudio.org/ubuntu-14.04/x86_64/shiny-server-1.5.12.933-amd64.deb" -O ss-latest.deb && \
     gdebi -n ss-latest.deb && \
-    rm -f version.txt ss-latest.deb && \
+    rm -f ss-latest.deb && \
     R -e "install.packages(c('shiny', 'rmarkdown'), repos='https://cran.rstudio.com/')" && \
     cp -R /usr/local/lib/R/site-library/shiny/examples/* /srv/shiny-server/
 
-EXPOSE 3838
+## APP TEST ## 
+# Install R packages required by your Shiny app
+RUN R -e 'install.packages(c("DT", "magrittr"), repos="http://cloud.r-project.org")'
+# Copy your Shiny app to /srv/shiny-server/myapp
+COPY myapp /srv/shiny-server/myapp
 
-COPY shiny-server.sh /usr/bin/shiny-server.sh
+# CONFIGURATION NGINX
+COPY server.conf /etc/nginx/sites-enabled/shiny.conf
+RUN rm /etc/nginx/sites-enabled/default
 
-RUN chmod 755 /usr/bin/shiny-server.sh
-
-# Hacky way to display the app located at /srv/shiny-server/myapp in iframe
-COPY index.html /srv/shiny-server/index.html
+# EXPOSITION DE PORT & LANCEMENT DE CONTENEUR 
+EXPOSE 80
+ADD entrypoint.sh /entrypoint.sh
+ADD init_shiny.sh /init_shiny.sh
+ENTRYPOINT ["/entrypoint.sh"]
 
